@@ -16,13 +16,13 @@ export function findBlockStart(
 ): number {
   for (let i = startLine - 1; i >= 0; i--) {
     const line = document.lineAt(i);
-    if (
-      line.firstNonWhitespaceCharacterIndex >= currentIndentation &&
-      line.isEmptyOrWhitespace === false
-    ) {
-      startLine = i;
-    } else {
+    if (line.isEmptyOrWhitespace) {
+      continue;
+    }
+    if (line.firstNonWhitespaceCharacterIndex < currentIndentation) {
       break;
+    } else {
+      startLine = i;
     }
   }
   return startLine;
@@ -40,40 +40,13 @@ export function findBlockEnd(
   let endLine = startLine;
   for (let i = startLine + 1; i < document.lineCount; i++) {
     const line = document.lineAt(i);
-
     if (line.isEmptyOrWhitespace) {
       continue;
     }
-
-    if (line.firstNonWhitespaceCharacterIndex >= currentIndentation) {
-      endLine = i;
-    } else {
-      break;
-    }
-  }
-  return endLine;
-}
-
-/**
- * Find the end of the block by checking for same indentation level Python keywords or lower indentation.
- */
-export function findKeywordBlockEnd(
-  document: vscode.TextDocument,
-  startLine: number,
-  currentIndentation: number
-): number {
-  let endLine = startLine;
-  for (let i = startLine + 1; i < document.lineCount; i++) {
-    const line = document.lineAt(i);
-
-    if (line.isEmptyOrWhitespace) {
-      continue;
-    }
-
     if (
-      (isPythonKeyword(line.text) &&
-        line.firstNonWhitespaceCharacterIndex === currentIndentation) ||
-      line.firstNonWhitespaceCharacterIndex < currentIndentation
+      line.firstNonWhitespaceCharacterIndex < currentIndentation ||
+      (line.firstNonWhitespaceCharacterIndex === currentIndentation &&
+        isPythonKeyword(line.text))
     ) {
       break;
     } else {
@@ -83,9 +56,6 @@ export function findKeywordBlockEnd(
   return endLine;
 }
 
-/**
- * Main function
- */
 export function selectPythonBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== "python") {
@@ -100,20 +70,15 @@ export function selectPythonBlock() {
   let startLine = selection.active.line;
   let endLine = selection.active.line;
 
-  if (isPythonKeyword(currentLine.text)) {
-    endLine = findKeywordBlockEnd(
-      document,
-      selection.active.line,
-      currentIndentation
-    );
-  } else {
+  if (!isPythonKeyword(currentLine.text)) {
     startLine = findBlockStart(
       document,
       selection.active.line,
       currentIndentation
     );
-    endLine = findBlockEnd(document, selection.active.line, currentIndentation);
   }
+
+  endLine = findBlockEnd(document, selection.active.line, currentIndentation);
 
   const newSelection = new vscode.Selection(
     new vscode.Position(startLine, 0),
