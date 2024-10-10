@@ -4,18 +4,8 @@ A Visual Studio Code extension that allows users to select blocks of Python code
 
 ## Features
 
-- **Select Same Indentation**: Automatically selects all lines of code that share the same indentation level as the currently selected line.
 - **Keyword-Based Selection**: If the current line contains specific Python keywords, it will extend the selection to encompass all related lines until the indentation changes.
-
-## Installation
-
-1. Open the Extensions view (`Ctrl+Shift+X`).
-2. Search for `Python Select Indentation`.
-3. Click on the **Install** button.
-
-Alternatively, you can install the extension directly from the command line:
-
-```code --install-extension <extension-id>```
+- **Select Same Indentation**: Automatically selects all lines of code that share the same indentation level as the currently selected line.
 
 ## Usage
 

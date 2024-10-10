@@ -6,9 +6,6 @@ export const pythonDefRegex =
 export const isPythonKeyword = (lineText: string): boolean =>
   pythonDefRegex.test(lineText);
 
-/**
- * Find the start of the block by moving upward from the current line.
- */
 export function findBlockStart(
   document: vscode.TextDocument,
   startLine: number,
@@ -16,10 +13,10 @@ export function findBlockStart(
 ): number {
   for (let i = startLine - 1; i >= 0; i--) {
     const line = document.lineAt(i);
-    if (line.isEmptyOrWhitespace) {
-      continue;
-    }
-    if (line.firstNonWhitespaceCharacterIndex < currentIndentation) {
+    if (
+      line.firstNonWhitespaceCharacterIndex < currentIndentation ||
+      line.isEmptyOrWhitespace
+    ) {
       break;
     } else {
       startLine = i;
@@ -28,10 +25,6 @@ export function findBlockStart(
   return startLine;
 }
 
-/**
- * Find the end of the block by moving downward from the current line.
- * Stop if indentation is lower than current line or if Python keyword is found.
- */
 export function findBlockEnd(
   document: vscode.TextDocument,
   isKeywordBlock: boolean,
@@ -44,7 +37,6 @@ export function findBlockEnd(
     if (line.isEmptyOrWhitespace) {
       continue;
     }
-    // Also break if keyword block and text with same indentation is found
     if (
       isKeywordBlock &&
       line.firstNonWhitespaceCharacterIndex === currentIndentation
@@ -64,7 +56,7 @@ export function findBlockEnd(
   return endLine;
 }
 
-export function selectPythonBlock() {
+export function selectBlock() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== "python") {
     return;
@@ -73,12 +65,16 @@ export function selectPythonBlock() {
   const document = editor.document;
   const selection = editor.selection;
   const currentLine = document.lineAt(selection.active.line);
-  const currentIndentation = currentLine.firstNonWhitespaceCharacterIndex;
+
+  if (currentLine.isEmptyOrWhitespace) {
+    return;
+  }
 
   let startLine = selection.active.line;
   let endLine = selection.active.line;
-
   let isKeywordBlock = isPythonKeyword(currentLine.text);
+
+  const currentIndentation = currentLine.firstNonWhitespaceCharacterIndex;
 
   if (!isKeywordBlock) {
     startLine = findBlockStart(
@@ -108,7 +104,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('Extension "pyselect" is now active!');
 
   const disposable = vscode.commands.registerCommand("pyselect.select", () => {
-    selectPythonBlock();
+    selectBlock();
   });
 
   context.subscriptions.push(disposable);
