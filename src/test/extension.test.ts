@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { findBlockStart } from "../extension";
+// import { findBlockStart } from "../extension";
 
 suite("findBlockStart Tests", () => {
   let document: vscode.TextDocument;

@@ -1,59 +1,60 @@
 import * as vscode from "vscode";
 
-export const pythonDefRegex =
-  /^\s*(?:def|class|if|else|elif|for|while|try|except|finally|with|async)\s*(.*):\s*$/;
+export const startBlockRegex =
+  /^\s*(?:def|class|if|for|while|try|with|async)\s*(.*):\s*$/;
 
-export const isPythonKeyword = (lineText: string): boolean =>
-  pythonDefRegex.test(lineText);
+export const branchBlockRegex = /^\s*(?:else|elif|except|finally)\s*(.*):\s*$/;
 
-export function findBlockStart(
-  document: vscode.TextDocument,
-  startLine: number,
-  currentIndentation: number
-): number {
-  for (let i = startLine - 1; i >= 0; i--) {
-    const line = document.lineAt(i);
-    if (
-      line.firstNonWhitespaceCharacterIndex < currentIndentation ||
-      line.isEmptyOrWhitespace
-    ) {
-      break;
-    } else {
-      startLine = i;
-    }
-  }
-  return startLine;
-}
+const isStartBlock = (line: vscode.TextLine) => {
+  return startBlockRegex.test(line.text);
+};
+
+const isBranchBlock = (line: vscode.TextLine) => {
+  return branchBlockRegex.test(line.text);
+};
 
 export function findBlockEnd(
   document: vscode.TextDocument,
-  isKeywordBlock: boolean,
-  startLine: number,
+  startLineNumber: number,
   currentIndentation: number
 ): number {
-  let endLine = startLine;
-  for (let i = startLine + 1; i < document.lineCount; i++) {
+  let endLineNumber = startLineNumber;
+  const line = document.lineAt(startLineNumber);
+  const startBlock = isStartBlock(line);
+  const branchBlock = isBranchBlock(line);
+
+  for (let i = startLineNumber + 1; i < document.lineCount; i++) {
     const line = document.lineAt(i);
     if (line.isEmptyOrWhitespace) {
       continue;
     }
+    if (line.firstNonWhitespaceCharacterIndex < currentIndentation) {
+      break;
+    }
     if (
-      isKeywordBlock &&
-      line.firstNonWhitespaceCharacterIndex === currentIndentation
+      startBlock &&
+      !isBranchBlock(line) &&
+      currentIndentation === line.firstNonWhitespaceCharacterIndex
     ) {
       break;
     }
     if (
-      line.firstNonWhitespaceCharacterIndex < currentIndentation ||
-      (line.firstNonWhitespaceCharacterIndex === currentIndentation &&
-        isPythonKeyword(line.text))
+      branchBlock &&
+      currentIndentation === line.firstNonWhitespaceCharacterIndex &&
+      (isStartBlock(line) || isBranchBlock(line))
     ) {
       break;
-    } else {
-      endLine = i;
     }
+    if (!startBlock && !branchBlock) {
+      if (isStartBlock(line)) {
+        break;
+      }
+    }
+
+    endLineNumber = i;
   }
-  return endLine;
+
+  return endLineNumber;
 }
 
 export function selectBlock() {
@@ -64,36 +65,34 @@ export function selectBlock() {
 
   const document = editor.document;
   const selection = editor.selection;
-  const currentLine = document.lineAt(selection.active.line);
 
-  if (currentLine.isEmptyOrWhitespace) {
+  let startLineNumber = selection.isEmpty
+    ? selection.active.line
+    : selection.end.line + 1;
+
+  const startLine = document.lineAt(startLineNumber);
+  if (startLine.isEmptyOrWhitespace) {
     return;
   }
-
-  let startLine = selection.active.line;
-  let endLine = selection.active.line;
-  let isKeywordBlock = isPythonKeyword(currentLine.text);
-
-  const currentIndentation = currentLine.firstNonWhitespaceCharacterIndex;
-
-  if (!isKeywordBlock) {
-    startLine = findBlockStart(
-      document,
-      selection.active.line,
-      currentIndentation
-    );
-  }
-
-  endLine = findBlockEnd(
+  const currentIndentation = startLine.firstNonWhitespaceCharacterIndex;
+  const endLineNumber = findBlockEnd(
     document,
-    isKeywordBlock,
-    selection.active.line,
+    startLineNumber,
     currentIndentation
   );
 
+  if (!selection.isEmpty) {
+    if (selection.start.line < startLineNumber) {
+      startLineNumber = selection.start.line;
+    }
+  }
+
   const newSelection = new vscode.Selection(
-    new vscode.Position(startLine, 0),
-    new vscode.Position(endLine, document.lineAt(endLine).text.length)
+    new vscode.Position(startLineNumber, 0),
+    new vscode.Position(
+      endLineNumber,
+      document.lineAt(endLineNumber).text.length
+    )
   );
 
   editor.selection = newSelection;
@@ -101,8 +100,7 @@ export function selectBlock() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Extension "pyselect" is now active!');
-
+  vscode.window.showInformationMessage('Extension "pyselect" is now active!');
   const disposable = vscode.commands.registerCommand("pyselect.select", () => {
     selectBlock();
   });
