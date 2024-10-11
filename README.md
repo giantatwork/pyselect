@@ -1,23 +1,27 @@
-# Python Select Indentation Extension
+# PySelect
 
-A Visual Studio Code extension that allows users to select blocks of Python code based on indentation levels or related to specific Python keywords such as `def`, `class`, `if`, `for`, `while`, `try`, `with`, and `async`.
+PySelect is a Visual Studio Code extension that helps Python developers quickly select entire code blocks (functions, classes, if-statements, loops, etc.) by simply placing the cursor at the start or within a block of code. This is especially useful when refactoring or analyzing code, as it eliminates the need for manually selecting a block line by line.
 
 ## Features
 
-- **Keyword-Based Selection**: If the current line contains specific Python keywords, it will extend the selection to encompass all related lines until the indentation changes.
-- **Select Same Indentation**: Automatically selects all lines of code that share the same indentation level as the currently selected line.
+- Automatically Select Code Blocks: Place the cursor at the start or inside a function, class, or control structure (like if, for, or while), and PySelect will highlight the entire block for you.
+- Support for Decorators: If a function or class has decorators, the selection will automatically include them.
+- Branch Block Detection: Selects corresponding else, elif, except, and finally blocks in a seamless manner.
+- Efficient Block Detection: Skips empty lines and maintains proper indentation when selecting blocks.
 
-## Usage
+## How to Install
+
+1. Download and install the extension via the Visual Studio Code marketplace or from source.
+2. Once installed, activate the extension via the command palette.
+
+## How to Use
 
 1.	Open a Python file in Visual Studio Code.
-2.	Place your cursor on a line that contains a keyword or any line you want to use as a reference.
-3.	Execute the command Select Same Indentation. You can do this by:
-    -	Pressing Ctrl+Shift+P to open the Command Palette.
-    -	Typing Pyselect and selecting the command.
+2.	Place the cursor inside any function, class, or block (e.g., if, for, while, etc.).
+3.	Use the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS) and type PySelect: Select Block or run the command directly via the shortcut:
+- Command: PySelect: Select Block
+4.	The entire block, including decorators (if present), will be selected.
 
-## Command
-    • pyselect.select: Triggers the selection based on the current indentation level and/or keyword.
-
-## Configuration
-
-This extension does not require any additional configuration. Simply install it and start using it in your Python files.
+## Extension Commands
+Command	Description
+`PySelect: Select Block` selects the code block.
