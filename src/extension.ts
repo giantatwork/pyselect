@@ -6,28 +6,44 @@ const branchBlockRegex = /^\s*(else|elif|except|finally)\s*(.*)\s*:\s*$/;
 const decoratorRegex = /^\s*@\w+(\.\w+)*(\(.*\))?\s*$/;
 const classOrFunctionRegex = /^\s*(def|class)\s+\w+\s*(\(.*\))?\s*:\s*$/;
 
-const isStartBlock = (line: vscode.TextLine) => {
+const findStartBlock = (line: vscode.TextLine) => {
   return startBlockRegex.test(line.text);
 };
-const isBranchBlock = (line: vscode.TextLine) => {
+const findBranchBlock = (line: vscode.TextLine) => {
   return branchBlockRegex.test(line.text);
 };
-const isDecorator = (line: vscode.TextLine) => {
+const findDecorator = (line: vscode.TextLine) => {
   return decoratorRegex.test(line.text);
 };
-const isClassOrFunction = (line: vscode.TextLine) => {
+const findClassOrFunction = (line: vscode.TextLine) => {
   return classOrFunctionRegex.test(line.text);
 };
 
-export function findBlockEnd(
+export function findBlockStart(
   document: vscode.TextDocument,
   startLineNumber: number,
   currentIndentation: number
 ): number {
-  const line = document.lineAt(startLineNumber);
-  const startBlock = isStartBlock(line);
-  const branchBlock = isBranchBlock(line);
+  for (let i = startLineNumber - 1; i >= 0; i--) {
+    const line = document.lineAt(i);
+    if (
+      line.firstNonWhitespaceCharacterIndex !== currentIndentation ||
+      line.isEmptyOrWhitespace
+    ) {
+      break;
+    }
+    startLineNumber = i;
+  }
+  return startLineNumber;
+}
 
+export function findBlockEnd(
+  document: vscode.TextDocument,
+  startLineNumber: number,
+  currentIndentation: number,
+  startBlock: boolean,
+  branchBlock: boolean
+): number {
   let endLineNumber = startLineNumber;
 
   for (let i = startLineNumber + 1; i < document.lineCount; i++) {
@@ -40,7 +56,7 @@ export function findBlockEnd(
     }
     if (
       startBlock &&
-      !isBranchBlock(line) &&
+      !findBranchBlock(line) &&
       currentIndentation === line.firstNonWhitespaceCharacterIndex
     ) {
       break;
@@ -48,12 +64,14 @@ export function findBlockEnd(
     if (
       branchBlock &&
       currentIndentation === line.firstNonWhitespaceCharacterIndex &&
-      (isStartBlock(line) || isBranchBlock(line))
+      (findStartBlock(line) ||
+        findBranchBlock(line) ||
+        (!findStartBlock(line) && !findBranchBlock(line)))
     ) {
       break;
     }
     if (!startBlock && !branchBlock) {
-      if (isStartBlock(line)) {
+      if (findStartBlock(line)) {
         break;
       }
     }
@@ -82,23 +100,35 @@ export function selectBlock() {
     return;
   }
 
-  const classOrFunction = isClassOrFunction(startLine);
+  const classOrFunction = findClassOrFunction(startLine);
   let startOffset = 0;
   if (classOrFunction) {
     const previousLineNumber = startLineNumber - 1;
     if (previousLineNumber > 0) {
       const previousLine = document.lineAt(previousLineNumber);
-      if (isDecorator(previousLine)) {
+      if (findDecorator(previousLine)) {
         startOffset = 1;
       }
     }
   }
-
+  const startBlock = findStartBlock(startLine);
+  const branchBlock = findBranchBlock(startLine);
   const currentIndentation = startLine.firstNonWhitespaceCharacterIndex;
+
+  if (!startBlock && !branchBlock) {
+    startLineNumber = findBlockStart(
+      document,
+      startLineNumber,
+      currentIndentation
+    );
+  }
+
   const endLineNumber = findBlockEnd(
     document,
     startLineNumber,
-    currentIndentation
+    currentIndentation,
+    startBlock,
+    branchBlock
   );
 
   startLineNumber -= startOffset;
