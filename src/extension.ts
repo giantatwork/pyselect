@@ -43,7 +43,7 @@ export function findBlockEnd(
   currentIndentation: number,
   startBlock: boolean,
   branchBlock: boolean,
-  decorator: boolean
+  decoratorBlock: boolean
 ): number {
   let endLineNumber = startLineNumber;
 
@@ -52,21 +52,24 @@ export function findBlockEnd(
     if (line.firstNonWhitespaceCharacterIndex < currentIndentation) {
       break;
     }
-    if (!startBlock && !branchBlock && !decorator) {
-      if (
-        findStartBlock(line) ||
-        findDecorator(line) ||
-        line.isEmptyOrWhitespace
-      ) {
+
+    const lineStartBlock = findStartBlock(line);
+    const lineDecorator = findDecorator(line);
+
+    if (!startBlock && !branchBlock && !decoratorBlock) {
+      if (lineStartBlock || lineDecorator || line.isEmptyOrWhitespace) {
         break;
       }
     }
     if (line.isEmptyOrWhitespace) {
       continue;
     }
+
+    const lineBranchBlock = findBranchBlock(line);
+
     if (
       startBlock &&
-      (!findBranchBlock(line) || findDecorator(line)) &&
+      (!lineBranchBlock || lineDecorator) &&
       currentIndentation === line.firstNonWhitespaceCharacterIndex
     ) {
       break;
@@ -74,9 +77,9 @@ export function findBlockEnd(
     if (
       branchBlock &&
       currentIndentation === line.firstNonWhitespaceCharacterIndex &&
-      (findStartBlock(line) ||
-        findBranchBlock(line) ||
-        (!findStartBlock(line) && !findBranchBlock(line)))
+      (lineStartBlock ||
+        lineBranchBlock ||
+        (!lineStartBlock && lineBranchBlock))
     ) {
       break;
     }
