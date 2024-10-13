@@ -42,21 +42,31 @@ export function findBlockEnd(
   startLineNumber: number,
   currentIndentation: number,
   startBlock: boolean,
-  branchBlock: boolean
+  branchBlock: boolean,
+  decorator: boolean
 ): number {
   let endLineNumber = startLineNumber;
 
   for (let i = startLineNumber + 1; i < document.lineCount; i++) {
     const line = document.lineAt(i);
-    if (line.isEmptyOrWhitespace) {
-      continue;
-    }
     if (line.firstNonWhitespaceCharacterIndex < currentIndentation) {
       break;
     }
+    if (!startBlock && !branchBlock && !decorator) {
+      if (
+        findStartBlock(line) ||
+        findDecorator(line) ||
+        line.isEmptyOrWhitespace
+      ) {
+        break;
+      }
+    }
+    if (line.isEmptyOrWhitespace) {
+      continue;
+    }
     if (
       startBlock &&
-      !findBranchBlock(line) &&
+      (!findBranchBlock(line) || findDecorator(line)) &&
       currentIndentation === line.firstNonWhitespaceCharacterIndex
     ) {
       break;
@@ -69,11 +79,6 @@ export function findBlockEnd(
         (!findStartBlock(line) && !findBranchBlock(line)))
     ) {
       break;
-    }
-    if (!startBlock && !branchBlock) {
-      if (findStartBlock(line)) {
-        break;
-      }
     }
 
     endLineNumber = i;
@@ -95,14 +100,15 @@ export function selectBlock() {
     ? selection.active.line
     : selection.end.line + 1;
 
-  const startLine = document.lineAt(startLineNumber);
+  let startLine = document.lineAt(startLineNumber);
   if (startLine.isEmptyOrWhitespace) {
     return;
   }
 
-  const classOrFunction = findClassOrFunction(startLine);
   let startOffset = 0;
-  if (classOrFunction) {
+  let decorator: boolean = false;
+
+  if (findClassOrFunction(startLine)) {
     const previousLineNumber = startLineNumber - 1;
     if (previousLineNumber > 0) {
       const previousLine = document.lineAt(previousLineNumber);
@@ -110,7 +116,13 @@ export function selectBlock() {
         startOffset = 1;
       }
     }
+  } else if (findDecorator(startLine)) {
+    startLineNumber += 1;
+    startLine = document.lineAt(startLineNumber);
+    startOffset = 1;
+    decorator = true;
   }
+
   const startBlock = findStartBlock(startLine);
   const branchBlock = findBranchBlock(startLine);
   const currentIndentation = startLine.firstNonWhitespaceCharacterIndex;
@@ -128,7 +140,8 @@ export function selectBlock() {
     startLineNumber,
     currentIndentation,
     startBlock,
-    branchBlock
+    branchBlock,
+    decorator
   );
 
   startLineNumber -= startOffset;
