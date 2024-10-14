@@ -168,10 +168,15 @@ export function selectBlock() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  vscode.window.showInformationMessage('Extension "pyselect" is now active!');
-  const disposable = vscode.commands.registerCommand("pyselect.select", () => {
-    selectBlock();
-  });
+  vscode.window.showInformationMessage(
+    'Extension "pylineselect" is now active!'
+  );
+  const disposable = vscode.commands.registerCommand(
+    "pylineselect.select",
+    () => {
+      selectBlock();
+    }
+  );
 
   context.subscriptions.push(disposable);
 }

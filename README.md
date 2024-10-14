@@ -1,6 +1,6 @@
-# PySelect
+# PyLineSelect
 
-PySelect is a Visual Studio Code extension that helps Python developers quickly select entire code blocks (functions, classes, if-statements, loops, etc.) by simply placing the cursor at the start or within a block of code. This is especially useful when refactoring or analyzing code, as it eliminates the need for manually selecting a block line by line.
+PyLineSelect is a Visual Studio Code extension that helps Python developers quickly select entire code blocks (functions, classes, if-statements, loops, etc.) by simply placing the cursor at the start or within a block of code. This is especially useful when refactoring or analyzing code, as it eliminates the need for manually selecting a block line by line.
 
 ## Features
 
@@ -32,4 +32,4 @@ When the cursor is on a line without any specific Python keywords, Pyselect will
 
 ## Extension Commands
 Command	Description
-`PySelect: Select Block` selects the code block.
+`PyLineSelect: Select Block` selects the code block.

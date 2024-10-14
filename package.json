@@ -1,8 +1,8 @@
 {
-  "name": "pyselect",
+  "name": "pylineselect",
   "displayName": "Pyselect",
   "description": "Quickly select Python code blocks",
-  "repository": {"url": "git@github.com:giantatwork/pyselect.git"},
+  "repository": {"url": "git@github.com:giantatwork/pylineselect.git"},
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.94.0"
@@ -17,8 +17,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "pyselect.select",
-        "title": "Pyselect"
+        "command": "pylineselect.select",
+        "title": "PyLineSelect"
       }
     ]
   },
